@@ -63,9 +63,12 @@ impl<V> Map<V> {
     #[inline]
     #[must_use]
     pub fn with_capacity_none(cap: usize) -> Self {
+        #[allow(unused_mut)]
         let mut m = Self::with_capacity(cap);
         for k in 0..cap {
-            m.remove(k);
+            unsafe {
+                m.head.add(k).write(None);
+            }
         }
         #[cfg(debug_assertions)]
         {

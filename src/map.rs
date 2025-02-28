@@ -64,7 +64,8 @@ impl<V> Map<V> {
         matches!(unsafe { &*self.head.add(k) }, Some(_))
     }
 
-    /// Remove by key.
+    /// Remove by key. This returns the value at the key if the key
+    /// was previously present.
     ///
     /// # Panics
     ///
@@ -72,12 +73,9 @@ impl<V> Map<V> {
     /// of the boundary of this map. It will not return `None`, it will panic.
     /// However, in "release" mode it will not panic, but will lead to
     /// undefined behavior.
-    #[inline]
-    pub fn remove(&mut self, k: usize) {
+    pub fn remove(&mut self, k: usize) -> Option<V> {
         self.assert_boundaries(k);
-        unsafe {
-            ptr::write(self.head.add(k), None);
-        }
+        unsafe { self.head.add(k).replace(None) }
     }
 
     /// Push to the rightmost position and return the key.
@@ -312,4 +310,16 @@ fn get_out_of_boundary() {
 fn remove_out_of_boundary() {
     let mut m: Map<&str> = Map::with_capacity(1);
     m.remove(5);
+}
+
+#[test]
+fn remove_returns_value() {
+    let mut m: Map<&str> = Map::with_capacity_none(16);
+    m.insert(0, "hans");
+    m.insert(8, "peter");
+    assert_eq!(m.remove(0), Some("hans"));
+    assert!(!m.contains_key(0));
+    assert_eq!(m.remove(8), Some("peter"));
+    assert!(!m.contains_key(8));
+    assert_eq!(m.remove(5), None);
 }
